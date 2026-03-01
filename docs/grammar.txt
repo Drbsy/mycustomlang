@@ -1,0 +1,29 @@
+# === PROGRAM ENTRY ===
+program             ::= statement_list TOK_EOF
+
+# === STATEMENTS ===
+statement_list      ::= statement { statement }
+statement           ::= var_declaration | function_definition
+op_statement_list   ::= statement_list | ε
+
+# === VARIABLE DECLARATION ===
+var_declaration     ::= TOK_VAR TOK_ID variable_type TOK_ASSIGN expr_value
+variable_type       ::= explicit_type | implicit_type
+explicit_type       ::= TOK_COLON type_definition
+implicit_type       ::= ε
+
+# === FUNCTION DEFINITION ===
+function_definition ::= TOK_FUNCTION TOK_ID TOK_L_PAREN parameters_list TOK_R_PAREN TOK_ARROW return_type TOK_L_BRACE body_def TOK_R_BRACE
+parameters_list     ::= [ parameter { TOK_COMMA parameter } ] | ε
+parameter           ::= TOK_ID TOK_COLON type_definition
+body_def            ::= TOK_L_BRACE op_statement_list TOK_R_BRACE
+
+# === TYPES ===
+type_definition     ::= TOK_TYPE_INT | TOK_TYPE_STRING | TOK_TYPE_FLOAT | TOK_TYPE_BOOL | TOK_TYPE_LIST
+return_type         ::= type_definition | TOK_TYPE_VOID
+
+# === EXPRESSIONS & LITERALS ===
+expr_value          ::= factor | string_literal | bool_literal
+factor              ::= TOK_NUMBER
+string_literal      ::= TOK_STRING
+bool_literal        ::= TOK_TRUE | TOK_FALSE

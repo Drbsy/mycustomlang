@@ -54,9 +54,9 @@ class TokenType(enum.Enum):
     TOK_EOF = enum.auto()
 
     #literals and iden
-    TOK_NUMBERS = enum.auto()
+    TOK_NUMBER = enum.auto()
     TOK_STRING = enum.auto()
-    TOK_NAME = enum.auto()
+    TOK_ID = enum.auto()
     
 
     #booland
@@ -84,6 +84,7 @@ class TokenType(enum.Enum):
     TOK_TYPE_MAP = enum.auto()
     TOK_TYPE_AUTO = enum.auto()
     TOK_TYPE_VOID = enum.auto()
+    TOK_MISMATCH = enum.auto()
 
 
 KEYWORDS = {
@@ -113,13 +114,13 @@ KEYWORDS = {
     "list": TokenType.TOK_TYPE_LIST,
     "map": TokenType.TOK_TYPE_MAP,
     "auto": TokenType.TOK_TYPE_AUTO,
-    "void": TokenType.TOK_TYPE_VOID
+    "void": TokenType.TOK_TYPE_VOID 
 }
 
 
 TokenPatterns = [
     ('SKIP',r'[ \t]+'),
-    ('TOK_NUMBERS',r'\d+(\.\d+)?'),
+    ('TOK_NUMBER',r'\d+(\.\d+)?'),
     ('TOK_STRING',r'\"[^\"]*\"'),
     ('TOK_EQUAL_TO',r'=='),
     ('TOK_NOT_EQUAL_TO',r'!='),
@@ -131,7 +132,7 @@ TokenPatterns = [
     ("TOK_AND",r'&&'),
     ('TOK_OR',r'\|\|'),
     ('TOK_DOUBLE_COLON',r'::'),
-    ('TOK_BLOCK_COMMENT',r'/\*.*?\*/'),
+    ('TOK_BLOCK_COMMENT', r'/\*[\s\S]*?\*/'),
     ('TOK_COMMENT',r'//.*'),
     ('TOK_ASSIGN',r'='),
     ('TOK_PLUS',r'\+'),
@@ -155,7 +156,8 @@ TokenPatterns = [
     ('TOK_COLON',r':'),
     ('TOK_SEMICOLON',r';'),
     ('TOK_NEWLINE',r'\n'),
-    ('TOK_NAME',r'[a-zA-Z_][a-zA-Z0-9_]*')
+    ('TOK_ID',r'[a-zA-Z_][a-zA-Z0-9_]*'),
+    ('MISMATCH',r'.')
 ]
 
 class Token:
@@ -197,9 +199,12 @@ class Lexer:
                 self.line_start = end
                 continue
             
-            elif kind == 'TOK_NAME':
-                token_type = KEYWORDS.get(value, TokenType.TOK_NAME)
+            elif kind == 'TOK_ID':
+                token_type = KEYWORDS.get(value, TokenType.TOK_ID)
                 self.tokens.append(Token(token_type, self.line, value, start, end, column))
+
+            elif kind == "MISMATCH":
+                raise RuntimeError(f"Unexpected charcter {value!r} on line {self.line}")
             
             else:
                 token_type = TokenType[kind]
