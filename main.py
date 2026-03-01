@@ -2,15 +2,18 @@ from core.lexer import Lexer
 from core.parser import Parser
 
 code = """
-var lol = 3
+var x = 3
 
 fn calculate_area(length: float, width: float) -> float {
     var area: float = 100
     var is_active = true
+    var y = is_active
+    return x
 }
 
 fn main() -> void {
     var status: string = "Running"
+    return status
 }
 """
 
