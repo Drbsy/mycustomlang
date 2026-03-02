@@ -52,7 +52,7 @@ Current Progress :  Still at the parser phase
 
 > My Plane
 
-to use python at the front end and llvm and the backend
+to use python at the front end and llvm aa the backend
 > importante
 
 i used ai to helps me come whit better var | fun | comments names for my project
