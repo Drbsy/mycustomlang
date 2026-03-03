@@ -1,84 +1,87 @@
+
 ## My Costume language
 i build this language to be my dream syntax language.
 and still locking for a name for it :)
 
 ## Code example
 
+
     var score : int = 95
-var bonus : float = 1.5
-var name : string = "Ali"
-var passed : bool = true
-
-fn calcFinal(base : int, multiplier : float) -> float {
-    var result = base * multiplier
-    return result
-}
-
-fn getGrade(s : int) -> string {
-    if (s >= 90) {
-        return "A"
+    var bonus : float = 1.5
+    var name : string = "Ali"
+    var passed : bool = true
+    
+    fn calcFinal(base : int, multiplier : float) -> float {
+        var result = base * multiplier
+        return result
     }
-    elif (s >= 80) {
-        return "B"
-    }
-    elif (s >= 70) {
-        return "C"
-    }
-    else {
-        return "F"
-    }
-}
-
-fn isEligible(s : int, p : bool) -> bool {
-    if (s >= 60 and p) {
-        return true
-    }
-    elif (s < 60 or not p) {
-        return false
-    }
-    else {
-        return false
-    }
-}
-
-fn sumScores(scores : list) -> int {
-    var total : int = 0
-    for (s in scores) {
-        if (s < 0) {
-            continue
+    
+    fn getGrade(s : int) -> string {
+        if (s >= 90) {
+            return "A"
         }
-        total = total + s
-    }
-    return total
-}
-
-fn countdown(start : int) -> int {
-    var i : int = start
-    var steps : int = 0
-    while (i > 0) {
-        if (i == 3) {
-            break
+        elif (s >= 80) {
+            return "B"
         }
-        i = i - 1
-        steps = steps + 1
+        elif (s >= 70) {
+            return "C"
+        }
+        else {
+            return "F"
+        }
     }
-    return steps
-}
+    
+    fn isEligible(s : int, p : bool) -> bool {
+        if (s >= 60 and p) {
+            return true
+        }
+        elif (s < 60 or not p) {
+            return false
+        }
+        else {
+            return false
+        }
+    }
+    
+    fn sumScores(scores : list) -> int {
+        var total : int = 0
+        for (s in scores) {
+            if (s < 0) {
+                continue
+            }
+            total = total + s
+        }
+        return total
+    }
+    
+    fn countdown(start : int) -> int {
+        var i : int = start
+        var steps : int = 0
+        while (i > 0) {
+            if (i == 3) {
+                break
+            }
+            i = i - 1
+            steps = steps + 1
+        }
+        return steps
+    }
+    
+    fn processStudent(s : int, p : bool, mult : float) -> int {
+        var eligible = isEligible(s, p)
+        var grade = getGrade(s)
+        var final = calcFinal(s, mult)
+        if (eligible and s > 50) {
+            return final
+        }
+        elif (not eligible or s == 0) {
+            return 0
+        }
+        else {
+            return s
+        }
+    }
 
-fn processStudent(s : int, p : bool, mult : float) -> int {
-    var eligible = isEligible(s, p)
-    var grade = getGrade(s)
-    var final = calcFinal(s, mult)
-    if (eligible and s > 50) {
-        return final
-    }
-    elif (not eligible or s == 0) {
-        return 0
-    }
-    else {
-        return s
-    }
-}
 ## Notes
 
 Current Progress :  Still at the parser phase
