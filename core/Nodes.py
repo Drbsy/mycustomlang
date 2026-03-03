@@ -56,6 +56,14 @@ class VarAccessNode:
     def __repr__(self):
         return f"VarAccessNode(VariableNode : {self.var_name})"
 
+class AssignNode:
+    def __init__(self, var_name, value):
+        self.var_name = var_name
+        self.value = value
+
+    def __repr__(self):
+        return f"AssignNode(var : {self.var_name}, value : {self.value})"
+        
 # --- FUNCTION & BLOCK NODES ---
 
 class FunctionDefNode:
@@ -83,6 +91,14 @@ class BlockNode:
     def __repr__(self):
         return f"BlockNode(block statements : {self.statements})"
 
+class CallNode:
+    def __init__(self, fn_name, args):
+        self.fn_name = fn_name
+        self.args = args
+
+    def __repr__(self):
+        return f"CallNode(fn_name : {self.fn_name}, args : {self.args})"
+
 # --- CONTROL FLOW NODES ---
 
 class IfNode:
@@ -91,7 +107,7 @@ class IfNode:
         self.else_case = else_case
 
     def __repr__(self):
-        return f"IfNode(cases={self.cases}, else={self.else_case})"
+        return f"IfNode(cases: {self.cases}, else : {self.else_case})"
 
 class ReturnNode:
     def __init__(self, return_value):
@@ -99,3 +115,29 @@ class ReturnNode:
     
     def __repr__(self):
         return f"ReturnNode(return value : {self.return_value})"
+
+class WhileNode:
+    def __init__(self, condition, body):
+        self.condition = condition
+        self.body = body
+    
+    def __repr__(self):
+        return f"WhileNode(condition : {self.condition}, body : {self.body})"
+    
+class ForNode:
+    def __init__(self, var_name, iterable, body):
+        self.var_name = var_name
+        self.iterable = iterable
+        self.body = body
+    
+    def __repr__(self):
+        return f"ForNode(var_name : {self.var_name}, iterable : {self.iterable}, body : {self.body})"
+    
+
+class BreakNode:
+    def __repr__(self):
+        return "BreakNode()"
+
+class ContinueNode:
+    def __repr__(self):
+        return "ContinueNode()"

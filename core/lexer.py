@@ -17,7 +17,8 @@ class TokenType(enum.Enum):
     TOK_CONTINUE = enum.auto()
     TOK_FOR = enum.auto()
     TOK_CONST = enum.auto()
-    
+    TOK_IN = enum.auto()
+
     #operators and symbols
     TOK_PLUS = enum.auto()
     TOK_MINUS = enum.auto()
@@ -34,6 +35,9 @@ class TokenType(enum.Enum):
     TOK_MODULO = enum.auto()
     TOK_POW = enum.auto()
     TOK_PLUS_ASSIGN = enum.auto()
+    TOK_MINUS_ASSIGN = enum.auto()
+    TOK_STAR_ASSIGN  = enum.auto()
+    TOK_SLASH_ASSIGN = enum.auto()
     TOK_HASH = enum.auto()
     TOK_ARROW = enum.auto()
     TOK_QUESTION = enum.auto()
@@ -114,7 +118,8 @@ KEYWORDS = {
     "list": TokenType.TOK_TYPE_LIST,
     "map": TokenType.TOK_TYPE_MAP,
     "auto": TokenType.TOK_TYPE_AUTO,
-    "void": TokenType.TOK_TYPE_VOID 
+    "void": TokenType.TOK_TYPE_VOID,
+    "in": TokenType.TOK_IN
 }
 
 
@@ -127,6 +132,9 @@ TokenPatterns = [
     ('TOK_GREATER_EQUAL',r'>='),
     ('TOK_LESS_EQUAL',r'<='),
     ('TOK_PLUS_ASSIGN',r'\+='),
+    ('TOK_MINUS_ASSIGN',r'-='),
+    ('TOK_STAR_ASSIGN',r'\*='),
+    ('TOK_SLASH_ASSIGN',r'/='),
     ('TOK_POW',r'\*\*'),
     ('TOK_ARROW',r'->'),
     ("TOK_AND",r'&&'),

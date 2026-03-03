@@ -14,16 +14,17 @@ class Parser(sly.Parser):
         ('left', 'TOK_EQUAL_TO', 'TOK_NOT_EQUAL_TO'),
         ('left', 'TOK_GREATER', 'TOK_GREATER_EQUAL', 'TOK_LESS', 'TOK_LESS_EQUAL'),
         ('left', 'TOK_PLUS', 'TOK_MINUS'),
-        ('left', 'TOK_STAR', 'TOK_SLASH')
+        ('left', 'TOK_STAR', 'TOK_SLASH'),
+        ('right', 'UMINUS'),
     )
 
     #--------------------------------------------------
     # --- ENTRY POINT ---
     #--------------------------------------------------
 
-    @_('global_statement_list TOK_EOF', 'global_statement_list')
+    @_('global_statement_list TOK_EOF', 'global_statement_list', 'empty')
     def program(self, p):
-        return p.global_statement_list
+        return p[0] if p[0] else []
     
     #--------------------------------------------------
     #--- LISTS ---
@@ -75,14 +76,17 @@ class Parser(sly.Parser):
     # --- STATEMENT TYPES ---
     #--------------------------------------------------
 
-    # --- GLOBAL STATMENT ---
+    # --- GLOBAL STATEMENT ---
 
-    @_('function_def', 'var_def', 'if_stmt')
+    @_('function_def', 'var_def', 'if_stmt', 'while_stmt', 'for_stmt',
+        'loop_control_stmt', 'assign_stmt', 'compound_assign_stmt', 'expr_stmt')
     def global_statement(self, p):
         return p[0]
 
-    # --- LOCAL STATMENT ---
-    @_('var_def', 'return_stmt', 'if_stmt')
+    # --- LOCAL STATEMENT ---
+
+    @_('var_def', 'return_stmt', 'if_stmt', 'while_stmt', 'for_stmt',
+        'loop_control_stmt', 'assign_stmt', 'compound_assign_stmt', 'expr_stmt')
     def local_statement(self, p):
         return p[0]
 
@@ -102,13 +106,27 @@ class Parser(sly.Parser):
     def bool_literal(self, p):
         return {'true' : True,'false': False}[p[0].lower()]
     
-    @_('factor', 'string_literal', 'bool_literal', 'TOK_ID')
+    @_('factor', 'string_literal', 'bool_literal', 'TOK_ID', 'primary_expr')
     def expr_value(self, p):
 
         if hasattr(p, 'TOK_ID'):
             return VarAccessNode(p.TOK_ID)
         
         return p[0]
+
+    @_('logical_or')
+    def expr_stmt(self, p):
+        return p[0]
+    
+    @_('TOK_L_PAREN logical_or TOK_R_PAREN')
+    def primary_expr(self, p):
+        return p.logical_or
+
+    # --- FUNCTION CALLS ---
+
+    @_('TOK_ID TOK_L_PAREN arguments_list TOK_R_PAREN')
+    def primary_expr(self, p):
+        return CallNode(fn_name=p.TOK_ID , args=p.arguments_list)
 
     #--------------------------------------------------
     # --- ARITHMETIC ---
@@ -125,6 +143,30 @@ class Parser(sly.Parser):
     def arithmetic(self, p):
         return p[0]
     
+    @_('TOK_MINUS arithmetic %prec UMINUS')
+    def arithmetic(self, p):
+        return UnaryOpNode(op_tok='-', node=p.arithmetic)
+
+    @_('TOK_ID TOK_PLUS_ASSIGN logical_or',
+       'TOK_ID TOK_MINUS_ASSIGN logical_or',
+       'TOK_ID TOK_STAR_ASSIGN logical_or',
+       'TOK_ID TOK_SLASH_ASSIGN logical_or')
+    def compound_assign_stmt(self, p):
+        op_map = {'+=' : '+',
+              '-=' : '-',
+              '*=' : '*',
+              '/=' : '/'}
+        
+        return AssignNode(var_name=p.TOK_ID,
+            value=BinOpNode(
+                left_node=VarAccessNode(p[0]), 
+                op_tok=op_map[p[1]], 
+                right_node=p.logical_or
+                )  
+    ) 
+    
+
+
     #--------------------------------------------------
     # --- COMPARISON ---
     #--------------------------------------------------
@@ -212,10 +254,14 @@ class Parser(sly.Parser):
             var_type = p.variable_type,
             var_value= p.logical_or)
     
+    @_('TOK_ID TOK_ASSIGN logical_or')
+    def assign_stmt(self, p):
+        return AssignNode(var_name=p.TOK_ID , value=p.logical_or)
+
     #--------------------------------------------------
     # --- FUNCTION LOGIC ---
     #--------------------------------------------------
-
+    
     @_('TOK_ID TOK_COLON type_definition')
     def parameter(self,p):
         return ParameterNode(
@@ -249,27 +295,39 @@ class Parser(sly.Parser):
             fn_body=p.body_def
         )
 
+    # --- CALL FUNCTION LOGIC ---
+
+    @_('logical_or')
+    def arguments_list(self, p):
+        return [p.logical_or]
+
+    @_('arguments_list TOK_COMMA logical_or')
+    def arguments_list(self, p):
+        p.arguments_list.append(p.logical_or)
+        return p.arguments_list
+    
+    @_('empty')
+    def arguments_list(self, p):
+        return []
+
+
     #--------------------------------------------------
     # --- CONTROL FLOW ---
     #--------------------------------------------------
 
     # --- IF/ELIF/ELSE ---
 
-    # --- IF ----
+    # --- IF / ELSE ----
 
-    @_('TOK_IF TOK_L_PAREN logical_or TOK_R_PAREN body_def elif_blocks else_opt')
+    @_('TOK_IF TOK_L_PAREN logical_or TOK_R_PAREN body_def elif_blocks TOK_ELSE body_def')
+    def if_stmt(self, p):
+        all_cases = [(p.logical_or, p.body_def0)] + p.elif_blocks 
+        return IfNode(cases=all_cases, else_case=p.body_def1)
+
+    @_('TOK_IF TOK_L_PAREN logical_or TOK_R_PAREN body_def elif_blocks')
     def if_stmt(self, p):
         all_cases = [(p.logical_or, p.body_def)] + p.elif_blocks 
-        return IfNode(cases=all_cases, else_case=p.else_opt)
-
-    # --- ELSE ----
-    @_('TOK_ELSE body_def')
-    def else_opt(self, p):
-        return p.body_def
-    
-    @_('empty')
-    def else_opt(self, p):
-        return None
+        return IfNode(cases=all_cases, else_case=None)
     
     # --- ELIF ----
     @_('TOK_ELIF TOK_L_PAREN logical_or TOK_R_PAREN body_def elif_blocks')
@@ -285,6 +343,26 @@ class Parser(sly.Parser):
     @_('TOK_RETURN [ logical_or ] ')
     def return_stmt(self ,p):
         return ReturnNode(return_value=p.logical_or)
+    
+    # --- WHILE ---
+
+    @_('TOK_WHILE_LOOP TOK_L_PAREN logical_or TOK_R_PAREN body_def')
+    def while_stmt(self, p):
+        return WhileNode(condition=p.logical_or , body=p.body_def)
+    
+    # --- FOR ---
+
+    @_('TOK_FOR TOK_L_PAREN TOK_ID TOK_IN logical_or TOK_R_PAREN body_def')
+    def for_stmt(self, p):
+        return ForNode(var_name=p.TOK_ID, iterable=p.logical_or,body=p.body_def)
+    
+    # --- BREAK / CONTINUE ---
+
+    @_('TOK_BREAK', 'TOK_CONTINUE')
+    def loop_control_stmt(self, p):
+        if hasattr(p, 'TOK_BREAK'):
+            return BreakNode()
+        return ContinueNode()
     
     #--------------------------------------------------
     # --- UTILITIES ---

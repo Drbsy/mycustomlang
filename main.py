@@ -3,7 +3,7 @@ from core.parser import Parser
 
 script_path = r'examples\main.txt'
 
-print_lexer : bool = True
+print_lexer : bool = False
 print_parser: bool = True
 
 
