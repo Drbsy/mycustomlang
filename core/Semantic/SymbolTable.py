@@ -53,13 +53,14 @@ class Symbol:
 #--------------------------------------------------
 
 class SymbolTable:
-    def __init__(self,name:str ,parent : Optional['SymbolTable'] = None, is_loop : bool = False, scope_level : int = 0):
+    def __init__(self,name:str ,parent : Optional['SymbolTable'] = None, is_loop : bool = False, scope_level : int = 0, is_function=False):
         self.name = name
         self.parent = parent
         self.symbols : Dict[str, Symbol] = {}
-        self.children : List['SymbolTable'] = []
+        self.children: List['SymbolTable'] = []
         self.is_loop = is_loop
         self.scope_level : int = scope_level
+        self.is_function = is_function 
     
     def define(self, name : str, symbol : Symbol):
         if name in self.symbols:
@@ -85,6 +86,8 @@ class SymbolTable:
     def is_inside_loop(self) -> bool:
         if self.is_loop:
             return True
+        if self.is_function:
+            return False
         return self.parent.is_inside_loop() if self.parent else False
     
 #--------------------------------------------------
@@ -138,7 +141,19 @@ class ScopeManager:
     #--------------------------------------------------
 
     def enter_function(self, fn_symbol : Symbol , scope_name: str):
-        self.scope_enter(scope_name)
+        level = len(self.scope_stack)
+        new_scope = SymbolTable(
+            name = scope_name,
+            parent = self.current_scope,
+            is_loop = False,
+            scope_level = level,
+            is_function = True
+        )
+        self.current_scope.children.append(new_scope)
+        self.current_scope = new_scope
+        self.scope_stack.append(new_scope)
+        print(f"Entering function scope: '{scope_name}' (level={level})")
+        
         self.current_function = fn_symbol
     
     def exit_function(self):

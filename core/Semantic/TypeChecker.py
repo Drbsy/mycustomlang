@@ -41,32 +41,34 @@ class TypeCherker:
     def check_VarAccessNode(self , node : VarAccessNode) -> DataTypes:
         symbol = self.scope.lookup(node.var_name)
 
-        if Symbol is None:
-            raise Exception(f"Type Checker : The Var '{type(node).__name__}' is not declared")
+        if symbol is None:
+            raise Exception(f"Type Checker : The Var '{node.var_name}' is not declared")
         
         return symbol.type
 
     def check_VarDeclNode(self , node : VarDeclNode) -> DataTypes:
         value_type = self.check(node.var_value)
-        declared_type = self.check(node.var_type)
+        declared_type = get_type(node.var_type)
 
         if declared_type == DataTypes.AUTO:
             resolved_type = value_type
-        
         else:
             if declared_type != value_type:
-                raise Exception(
-                    f"Type Error : var '{node.var_name} is declared as type'"
-                    f"assigned value of type {value_type.name}"
-                )
+                if declared_type == DataTypes.FLOAT and value_type == DataTypes.INT:
+                    resolved_type = DataTypes.FLOAT
+                else:
+                    raise Exception(
+                        f"Type Error : var '{node.var_name} is declared as type'"
+                        f"assigned value of type {value_type.name}"
+                    )
             resolved_type = declared_type
         
-        Symbol = Symbol(
+        new_symbol = Symbol(
             name = node.var_name,
             kind = SymbolKind.VARIABLE,
             type = resolved_type
         )
-        self.scope.define(node.var_name, Symbol)
+        self.scope.define(node.var_name, new_symbol)
 
         return resolved_type
 
@@ -77,22 +79,24 @@ class TypeCherker:
         
         if symbol.kind == SymbolKind.FUNCTION:
             raise Exception(
-                f"Type Error: '{symbol.name}' is a func"
+                f"Type Error: '{symbol.name}' is a func "
                 f"func cannot be reassigned"
             )
+
         
         symbol_type = self.check(node.value)
 
         if symbol.type == DataTypes.AUTO:
             symbol.type = symbol_type
             return symbol_type
+        
         if symbol.type == DataTypes.FLOAT and symbol_type == DataTypes.INT:
             return DataTypes.FLOAT
         
         if symbol.type == symbol_type:
             return symbol.type
-        else:
-            raise Exception(f"Type Error: Cannot assign '{symbol_type.name}' to '{symbol.name}' which is of type '{symbol.type.name}'")
+        
+        raise Exception(f"Type Error: Cannot assign '{symbol_type.name}' to '{symbol.name}' which is of type '{symbol.type.name}'")
 
     #--------------------------------------------------
     # --- OPERATORS ---
@@ -105,15 +109,25 @@ class TypeCherker:
         numeric  = {DataTypes.FLOAT, DataTypes.INT}
 
         if node.op_tok in op:
-
+            if left == DataTypes.AUTO and right in numeric:
+                return right  
+            if right == DataTypes.AUTO and left in numeric:
+                return left   
+            
+            if left == DataTypes.AUTO and right == DataTypes.AUTO:
+                return DataTypes.AUTO
+            
             if node.op_tok == '+' and left == DataTypes.STRING and right == DataTypes.STRING:
                 return DataTypes.STRING
             
             if left in numeric  and right in numeric:
+                if node.op_tok == '/':
+                   return DataTypes.FLOAT
+                      
                 if left == DataTypes.INT and right == DataTypes.INT:
                     return DataTypes.INT
-                else:
-                    return DataTypes.FLOAT
+                
+                return DataTypes.FLOAT
             
             raise Exception(
                 f"Type Error : Cannot '{node.op_tok}' between '{left.name}' and '{right.name}'"
@@ -179,7 +193,7 @@ class TypeCherker:
 
                 elif left != right :
                     raise Exception(
-                        f"Type Eroor : '{op}' is not valid to compare '{left.name}' and '{right.name}'"
+                        f"Type Error : '{op}' is not valid to compare '{left.name}' and '{right.name}'"
                     )
             else : 
                 if left not in numeric or right not in numeric:
@@ -222,7 +236,7 @@ class TypeCherker:
     # --- FUNCTIONS ---
     #--------------------------------------------------
 
-    def check_FunctionDefNode(self, node : FunctionDefNode):
+    def check_FunctionDefNode(self, node : FunctionDefNode) -> DataTypes:
         return_type = None
 
         if node.fn_return_type != "AUTO":
@@ -249,15 +263,16 @@ class TypeCherker:
         )
 
         self.scope.define(node.fn_name, fn_symbol)
-
         self.scope.enter_function(fn_symbol, f"fn:{node.fn_name}")
 
         for param_sym in param_symbols:
             self.scope.define(param_sym.name, param_sym)
 
-        self.check_BlockNode(node.fn_body)
+        try:
+            self.check_BlockNode(node.fn_body)
+        finally:
+            self.scope.exit_function()
 
-        self.scope.exit_function()
         return DataTypes.VOID
 
     def check_CallNode(self, node: CallNode) -> DataTypes:
@@ -292,49 +307,103 @@ class TypeCherker:
 
         return symbol.return_type
     
+    #--------------------------------------------------
+    # --- CONTROL FLOW ---
+    #--------------------------------------------------
 
-    def check_BlockNode(self, node : BlockNode):
-        if node.statements:
+    def check_BlockNode(self, node : BlockNode) -> DataTypes:
+        if node.statements != None:
             for stmt in node.statements:
                 self.check(stmt)
         return DataTypes.VOID
     
-    def check_IfNode(self, node: IfNode):
-
-
+    def check_IfNode(self , node: IfNode) -> DataTypes:
         for condition, body in node.cases:
-            cond_type = self.check(condition)
+
+            condition_type = self.check(condition)
+
+            if condition_type == DataTypes.BOOL:
+                self.scope.scope_enter("if_block")
+                self.check_BlockNode(body)
+                self.scope.scope_exit()
             
-
-            if cond_type != DataTypes.BOOL:
-                raise Exception(
-                f"Type Error: if/elif condition must be bool, got '{cond_type.name}'"
-            )
-
-            self.scope.scope_enter("if_block")
-            self.check_BlockNode(body)
-            self.scope.scope_exit()
-
-
+            else :
+                raise Exception(f"Type Error: if/elif condition must be 'bool'")
+            
         if node.else_case:
-            self.scope("else_block")
+            self.scope.scope_enter("else_block")
             self.check_BlockNode(node.else_case)
-            self.scope.scope_exit
+            self.scope.scope_exit()
         
         return DataTypes.VOID
     
-    def check_WhileNode(self, node: WhileNode) -> DataTypes:
+    def check_WhileNode(self, node : WhileNode) -> DataTypes:
+
         cond_type = self.check(node.condition)
 
         if cond_type != DataTypes.BOOL:
-                raise Exception(
-                f"Type Error: while condition must be bool, got {cond_type.name}"
-            )
+            raise Exception(f"Type Error: while loop condition must be 'bool'")
         
-        self.scope.scope_enter("while_block", is_loop=True)
+        self.scope.scope_enter("while_block" , is_loop=True)
         self.check_BlockNode(node.body)
         self.scope.scope_exit()
-        return DataTypes.VOID
 
-    #TODO Control Flow 
-    #! BlockNode | IfNode | WhileNode | ForNode | ReturnNode | BreakNode | ContinueNode
+        return DataTypes.VOID
+    
+    def check_ForNode(self, node : ForNode) -> DataTypes:
+        iterable_type = self.check(node.iterable)
+
+        if iterable_type != DataTypes.LIST:
+            raise Exception(f"Type Error: for loop iterable must be 'List'")
+        
+        self.scope.scope_enter("for_block", is_loop=True)
+
+        loop_var = Symbol(
+            name=node.var_name,
+            kind=SymbolKind.VARIABLE,
+            type=DataTypes.AUTO
+        )
+        self.scope.define(node.var_name , loop_var)
+
+        self.check_BlockNode(node.body)
+        self.scope.scope_exit()
+
+        return DataTypes.VOID
+    
+    def check_ReturnNode(self, node: ReturnNode) -> DataTypes:
+        current_function = self.scope.get_current_function()
+        
+        if current_function == None:
+            raise Exception(f"Type Error : return must not be outside a function")
+        
+        if node.return_value == None:
+            actual_type = DataTypes.VOID
+        else:
+            actual_type = self.check(node.return_value)
+        
+        expected_return_type = current_function.return_type
+
+        if actual_type != expected_return_type:
+
+            if expected_return_type == DataTypes.FLOAT and actual_type == DataTypes.INT:
+                return DataTypes.FLOAT
+            
+            if expected_return_type == DataTypes.AUTO:
+                current_function.return_type = actual_type
+                current_function.type = actual_type
+                return actual_type
+            
+            raise Exception(
+                f"Type Error : the return type must match the function return type"
+            )
+        
+        return actual_type
+
+    
+    def check_BreakNode(self, node : BreakNode) -> DataTypes:
+        self.scope.check_loop_validity()
+        return DataTypes.VOID
+    
+    def check_ContinueNode(self, node : ContinueNode) -> DataTypes:
+        self.scope.check_loop_validity()
+        return DataTypes.VOID
