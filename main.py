@@ -1,5 +1,5 @@
-from core.Lexer.Lexer import Lexer
-from core.Parser.Parser import Parser
+from core.Lexer import Lexer
+from core.Parser import Parser
 from rich import print as rprint
 import os
 

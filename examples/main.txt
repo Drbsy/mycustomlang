@@ -1,4 +1,4 @@
-var score : int = 95
+var score = 95
 var bonus : float = 1.5
 var name : string = "Ali"
 var passed : bool = true
