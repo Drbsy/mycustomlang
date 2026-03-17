@@ -1,4 +1,5 @@
 
+
 ## My Costume language
 i build this language to be my dream syntax language.
 and still locking for a name for it :)
@@ -10,6 +11,7 @@ and still locking for a name for it :)
     var bonus : float = 1.5
     var name : string = "Ali"
     var passed : bool = true
+    var names : list = ["Ahmed", "Ali", "Mohamed:]
     
     fn calcFinal(base : int, multiplier : float) -> float {
         var result = base * multiplier
@@ -84,7 +86,7 @@ and still locking for a name for it :)
 
 ## Notes
 
-Current Progress :  Still at the parser phase
+Current Progress :  semantic analysis
 
   
 
