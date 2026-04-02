@@ -1,7 +1,7 @@
 _ = None
-from core.Lexer.Lexer import TokenType
+from core.frontend.Lexer.Lexer import TokenType
+from core.frontend.Parser.Nodes import *
 import sly
-from core.Parser.Nodes import *
 
 class Parser(sly.Parser):
 

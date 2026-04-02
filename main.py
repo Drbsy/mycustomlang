@@ -1,5 +1,6 @@
-from core.Lexer import Lexer
-from core.Parser import Parser
+from core.frontend.Lexer import Lexer
+from core.frontend.Parser import Parser
+from core.frontend.Semantic.Analyzer import Analyzer
 from rich import print as rprint
 import os
 
@@ -9,7 +10,7 @@ script_path = os.path.join(BASE_DIR, 'examples', 'main.txt')
 
 print_lexer : bool = True
 print_parser: bool = True
-
+print_semactic : bool = True
 
 
 def read_script_file(script_path):
@@ -35,8 +36,8 @@ def print_tokens(tokens):
 def run_parser(parser_obj, tokens):
     tokens = normalize_tokens(tokens)
     result = parser_obj.parse(iter(tokens))
-    print("AST tree :")
     rprint(result)
+    return result
 
 try:
     script_lines = read_script_file(script_path)
@@ -53,7 +54,11 @@ try:
         print('\n\n' + '_' *120 +'\n\n')
 
     if print_parser:
-        run_parser(pars, tokens)
+        ast = run_parser(pars, tokens)
+    
+    if print_semactic:
+        analyzer = Analyzer()
+        analyzer.analyze(ast)
 
 except Exception as e:
     print(f"Error: {e}")

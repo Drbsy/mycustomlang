@@ -1,6 +1,3 @@
-from core.frontend.Lexer.Lexer import *
-from core.frontend.Parser.Parser import *
-from core.frontend.Parser.Nodes import *
 from core.frontend.Semantic.Analyzer import *
 from core.frontend.Semantic.SymbolTable import *
 from core.frontend.Semantic.TypeChecker import *

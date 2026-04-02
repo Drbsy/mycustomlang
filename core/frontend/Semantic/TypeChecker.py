@@ -1,5 +1,5 @@
-from core.Parser.Nodes import *
-from core.Semantic.SymbolTable import (
+from core.frontend.Parser.Nodes import *
+from core.frontend.Semantic.SymbolTable import (
     ScopeManager, Symbol, SymbolKind, DataTypes, get_type
     )
 
